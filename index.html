@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>薪火抽签系统 · 市场医学部 · 心血管急救事业群终端销售部</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=ZCOOL+XiaoWei&family=Cinzel:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --fire-1:#ff7a18;
+    --fire-2:#ff3d2e;
+    --fire-3:#b8161c;
+    --ice-1:#1a4f8b;
+    --ice-2:#0a6fb8;
+    --ice-3:#082848;
+    --gold-1:#f7d27a;
+    --gold-2:#f0b441;
+    --gold-3:#e08f2a;
+    --paper:#fff6e0;
+    --ink:#0b0f1a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden}
+  body{
+    font-family:"Noto Serif SC", serif;
+    color:var(--paper);
+    background:#050208;
+    position:relative;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+
+  /* ===== Background layers ===== */
+  .bg{position:fixed;inset:0;z-index:0;overflow:hidden}
+  .bg-base{
+    position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse 60% 80% at 12% 50%, rgba(20,90,180,.65) 0%, rgba(8,40,72,.4) 35%, transparent 70%),
+      radial-gradient(ellipse 70% 90% at 88% 50%, rgba(220,60,40,.75) 0%, rgba(120,20,20,.5) 35%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 50% 110%, rgba(255,140,40,.45) 0%, transparent 60%),
+      linear-gradient(180deg, #0a0612 0%, #15080f 50%, #1a0a08 100%);
+  }
+  .bg-vignette{
+    position:absolute;inset:0;
+    background:radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.7) 100%);
+    pointer-events:none;
+  }
+  .bg-grain{
+    position:absolute;inset:0;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    opacity:.5;mix-blend-mode:overlay;pointer-events:none;
+  }
+  canvas#particles{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+  /* Horse silhouettes painted with gradients & blur */
+  .horse{position:absolute;pointer-events:none;opacity:.45;filter:blur(.3px)}
+  .horse.ice{
+    left:-4%;top:8%;width:42vw;height:78vh;
+    background:radial-gradient(ellipse at 30% 40%, rgba(120,200,255,.35), transparent 55%);
+    mix-blend-mode:screen;
+    animation:driftL 14s ease-in-out infinite alternate;
+  }
+  .horse.fire{
+    right:-4%;top:6%;width:46vw;height:82vh;
+    background:radial-gradient(ellipse at 70% 40%, rgba(255,150,60,.45), transparent 55%);
+    mix-blend-mode:screen;
+    animation:driftR 16s ease-in-out infinite alternate;
+  }
+  @keyframes driftL{from{transform:translate(0,0)}to{transform:translate(20px,-12px)}}
+  @keyframes driftR{from{transform:translate(0,0)}to{transform:translate(-22px,-10px)}}
+
+  /* ===== Layout ===== */
+  .stage{
+    position:relative;z-index:2;
+    height:100vh;
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    padding:24px 40px 20px;
+  }
+
+  /* ===== Header ===== */
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    gap:24px;
+  }
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand-mark{
+    width:48px;height:48px;border-radius:50%;
+    background:conic-gradient(from 220deg, #ff7a18, #b8161c, #1a4f8b, #ff7a18);
+    display:grid;place-items:center;
+    box-shadow:0 0 20px rgba(255,120,40,.5), inset 0 0 12px rgba(0,0,0,.4);
+    position:relative;
+  }
+  .brand-mark::after{
+    content:"";position:absolute;inset:3px;border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, #1a2b4f, #050a14);
+  }
+  .brand-mark span{position:relative;z-index:1;font-family:"Cinzel",serif;font-weight:700;color:#fff6e0;font-size:12px;letter-spacing:1px}
+  .brand-text{display:flex;flex-direction:column;line-height:1.1}
+  .brand-text .cn{font-weight:700;font-size:20px;letter-spacing:6px;color:#dbe9ff}
+  .brand-text .en{font-family:"Cinzel",serif;font-size:10px;letter-spacing:3px;color:#f0b441;margin-top:3px}
+
+  .tagline{
+    text-align:center;
+    flex:1;
+  }
+  .tagline .sub{
+    font-size:11px;letter-spacing:8px;color:#8fb3d9;
+    margin-bottom:6px;text-transform:uppercase;
+  }
+  .tagline .main{
+    font-size:22px;letter-spacing:8px;font-weight:700;
+    background:linear-gradient(90deg, #dbe9ff 0%, #f7d27a 50%, #ff8a3a 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    text-shadow:0 0 30px rgba(255,180,80,.15);
+  }
+
+  .meta{
+    text-align:right;font-size:11px;letter-spacing:3px;color:#a8c0d8;
+    line-height:1.6;
+  }
+  .meta .pill{
+    display:inline-block;padding:4px 10px;border:1px solid rgba(247,210,122,.4);
+    border-radius:99px;color:#f7d27a;letter-spacing:2px;font-size:10px;
+    margin-bottom:4px;
+  }
+
+  /* ===== Main stage ===== */
+  main{
+    display:grid;
+    grid-template-columns: 280px 1fr 280px;
+    gap:24px;
+    align-items:stretch;
+    padding-top:18px;
+    min-height:0;
+  }
+
+  /* Side panels */
+  .panel{
+    background:linear-gradient(180deg, rgba(20,30,55,.55), rgba(10,15,30,.65));
+    border:1px solid rgba(247,210,122,.18);
+    border-radius:4px;
+    padding:18px 16px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    box-shadow: 0 8px 40px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.05);
+    display:flex;flex-direction:column;
+    min-height:0;
+  }
+  .panel-title{
+    font-size:11px;letter-spacing:6px;color:#f7d27a;
+    padding-bottom:10px;margin-bottom:12px;
+    border-bottom:1px solid rgba(247,210,122,.2);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .panel-title .count{
+    font-family:"Cinzel",serif;font-size:12px;color:#dbe9ff;letter-spacing:1px;
+  }
+
+  /* Participant list */
+  .pool{
+    list-style:none;overflow-y:auto;flex:1;
+    display:flex;flex-direction:column;gap:6px;
+    padding-right:4px;
+  }
+  .pool::-webkit-scrollbar{width:4px}
+  .pool::-webkit-scrollbar-thumb{background:rgba(247,210,122,.3);border-radius:2px}
+  .pool li{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 12px;
+    background:linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,0));
+    border-left:2px solid rgba(247,210,122,.3);
+    font-size:15px;font-weight:600;color:#e8f0ff;
+    letter-spacing:2px;
+    transition: all .4s ease;
+  }
+  .pool li.drawn{
+    color:#5a6b85;border-left-color:#3a4560;
+    background:rgba(0,0,0,.25);
+    text-decoration:line-through;text-decoration-color:rgba(255,255,255,.2);
+  }
+  .pool li.drawn .badge{display:none}
+  .pool li .badge{
+    font-family:"Cinzel",serif;font-size:10px;color:#f7d27a;
+    border:1px solid rgba(247,210,122,.4);
+    padding:1px 6px;border-radius:99px;letter-spacing:1px;
+  }
+  .pool li.drawn::after{
+    content:"已抽";font-size:9px;color:#6a7a95;letter-spacing:2px;
+    margin-left:auto;
+  }
+
+  /* History */
+  .history{
+    list-style:none;overflow-y:auto;flex:1;
+    display:flex;flex-direction:column;gap:8px;
+    counter-reset: pick;
+    padding-right:4px;
+  }
+  .history::-webkit-scrollbar{width:4px}
+  .history::-webkit-scrollbar-thumb{background:rgba(247,210,122,.3);border-radius:2px}
+  .history li{
+    counter-increment: pick;
+    display:flex;align-items:center;gap:12px;
+    padding:10px 12px;
+    background:linear-gradient(90deg, rgba(247,210,122,.08), rgba(255,120,40,.04));
+    border:1px solid rgba(247,210,122,.2);
+    border-radius:3px;
+    font-size:15px;font-weight:600;
+    letter-spacing:2px;
+    color:#f7d27a;
+    animation: histIn .6s cubic-bezier(.2,.8,.2,1) both;
+  }
+  .history li::before{
+    content: "No." counter(pick, decimal-leading-zero);
+    font-family:"Cinzel",serif;font-size:10px;
+    color:#dbe9ff;letter-spacing:1px;opacity:.7;
+    border-right:1px solid rgba(247,210,122,.3);
+    padding-right:10px;
+  }
+  .history li time{
+    margin-left:auto;font-family:"Cinzel",serif;
+    font-size:10px;color:#a8c0d8;letter-spacing:1px;font-weight:400;
+  }
+  @keyframes histIn{
+    from{opacity:0;transform:translateX(20px)}
+    to{opacity:1;transform:translateX(0)}
+  }
+
+  /* ===== Center draw stage ===== */
+  .draw{
+    display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+    position:relative;
+    padding:8px 0;
+  }
+  .draw-frame{
+    position:relative;
+    width:min(640px,100%);
+    aspect-ratio: 16/9;
+    max-height:62vh;
+    display:grid;place-items:center;
+    border:1px solid rgba(247,210,122,.25);
+    background:
+      radial-gradient(ellipse at center, rgba(10,18,35,.4), rgba(5,8,18,.7));
+    box-shadow:
+      0 0 80px rgba(255,140,40,.15),
+      0 0 40px rgba(40,100,180,.12),
+      inset 0 0 60px rgba(0,0,0,.6);
+    overflow:hidden;
+  }
+  /* Corner ornaments */
+  .corner{position:absolute;width:32px;height:32px;border:1px solid #f7d27a;opacity:.7}
+  .corner.tl{top:8px;left:8px;border-right:none;border-bottom:none}
+  .corner.tr{top:8px;right:8px;border-left:none;border-bottom:none}
+  .corner.bl{bottom:8px;left:8px;border-right:none;border-top:none}
+  .corner.br{bottom:8px;right:8px;border-left:none;border-top:none}
+
+  .seal{
+    position:absolute;top:14px;left:50%;transform:translateX(-50%);
+    font-size:10px;letter-spacing:8px;color:#f7d27a;opacity:.7;
+  }
+  .seal-bottom{
+    position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+    font-family:"Cinzel",serif;font-size:10px;letter-spacing:4px;color:#a8c0d8;opacity:.6;
+  }
+
+  /* The name display */
+  .display{
+    position:relative;
+    width:100%;text-align:center;
+    padding:0 40px;
+  }
+  .label{
+    font-size:11px;letter-spacing:10px;color:#8fb3d9;
+    margin-bottom:18px;
+    opacity:.85;
+  }
+  .name{
+    font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+    font-size: clamp(60px, 9vw, 130px);
+    font-weight: 900;
+    line-height:1;
+    letter-spacing: 12px;
+    background:linear-gradient(180deg, #fff6e0 0%, #f7d27a 40%, #e08f2a 70%, #b8161c 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter: drop-shadow(0 0 20px rgba(255,180,80,.4));
+    transition: filter .3s ease;
+    display:inline-block;
+    min-height:1em;
+  }
+  .name.spinning{
+    filter: drop-shadow(0 0 8px rgba(120,180,255,.6));
+    background:linear-gradient(180deg, #dbe9ff 0%, #6fb3ff 60%, #1a4f8b 100%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .name.revealed{
+    animation: reveal .9s cubic-bezier(.2,1.6,.3,1) both;
+  }
+  @keyframes reveal{
+    0%{transform:scale(.6);opacity:0;filter:blur(20px) drop-shadow(0 0 0 transparent)}
+    60%{transform:scale(1.15);opacity:1;filter:blur(0) drop-shadow(0 0 40px rgba(255,200,100,.9))}
+    100%{transform:scale(1);opacity:1;filter:blur(0) drop-shadow(0 0 25px rgba(255,180,80,.6))}
+  }
+
+  /* Sub status line under name */
+  .sub-status{
+    margin-top:16px;font-size:11px;letter-spacing:6px;color:#a8c0d8;
+    min-height:14px;
+  }
+  .sub-status.win{color:#f7d27a}
+
+  /* ===== Controls ===== */
+  .controls{
+    margin-top:18px;
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center;
+  }
+  .btn{
+    appearance:none;border:none;cursor:pointer;
+    font-family:"Noto Serif SC",serif;font-weight:700;
+    padding:14px 32px;
+    letter-spacing:6px;font-size:14px;
+    background:transparent;color:#f7d27a;
+    border:1px solid rgba(247,210,122,.5);
+    position:relative;overflow:hidden;
+    transition: all .3s ease;
+  }
+  .btn::before{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(120deg, transparent 30%, rgba(247,210,122,.15) 50%, transparent 70%);
+    transform:translateX(-100%);transition:transform .6s ease;
+  }
+  .btn:hover::before{transform:translateX(100%)}
+  .btn:hover{color:#fff6e0;border-color:#f7d27a;box-shadow:0 0 20px rgba(247,210,122,.3)}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+
+  .btn.primary{
+    background:linear-gradient(135deg, var(--fire-2), var(--fire-3));
+    border-color:transparent;color:#fff6e0;
+    box-shadow:0 6px 24px rgba(220,60,40,.4), inset 0 1px 0 rgba(255,255,255,.2);
+    font-size:16px;padding:16px 48px;letter-spacing:10px;
+  }
+  .btn.primary:hover{
+    background:linear-gradient(135deg, var(--fire-1), var(--fire-2));
+    box-shadow:0 8px 32px rgba(255,120,40,.6), inset 0 1px 0 rgba(255,255,255,.3);
+  }
+  .btn.primary.stop{
+    background:linear-gradient(135deg, var(--ice-2), var(--ice-3));
+    box-shadow:0 6px 24px rgba(20,90,180,.4);
+  }
+  .btn.primary.stop:hover{
+    background:linear-gradient(135deg, #2a8fd8, var(--ice-2));
+    box-shadow:0 8px 32px rgba(40,140,220,.6);
+  }
+
+  .count-select{
+    display:flex;align-items:center;gap:8px;
+    font-size:11px;letter-spacing:4px;color:#a8c0d8;
+  }
+  .count-select select{
+    background:rgba(10,18,35,.7);
+    color:#f7d27a;border:1px solid rgba(247,210,122,.4);
+    padding:8px 14px;font-family:"Cinzel",serif;font-size:13px;letter-spacing:2px;
+    cursor:pointer;outline:none;
+  }
+  .count-select select:hover{border-color:#f7d27a}
+
+  /* ===== Footer ribbon ===== */
+  footer{
+    text-align:center;
+    padding-top:14px;
+    font-size:10px;letter-spacing:8px;color:#7a8fa8;
+    border-top:1px solid rgba(247,210,122,.12);
+    margin-top:14px;
+  }
+  footer .dot{color:#f7d27a;margin:0 12px}
+
+  /* Burst overlay shown at reveal */
+  .burst{
+    position:absolute;inset:0;pointer-events:none;opacity:0;
+    background:
+      radial-gradient(circle at center, rgba(255,200,100,.4) 0%, transparent 50%);
+    animation: none;
+  }
+  .burst.fire{
+    animation: burst 1.2s ease-out;
+  }
+  @keyframes burst{
+    0%{opacity:0;transform:scale(.5)}
+    20%{opacity:1;transform:scale(1.1)}
+    100%{opacity:0;transform:scale(1.6)}
+  }
+
+  /* Side-panel emphasis labels */
+  .legend{
+    display:flex;gap:8px;justify-content:center;
+    margin-top:18px;flex-wrap:wrap;
+  }
+  .legend .chip{
+    display:flex;align-items:center;gap:6px;
+    font-size:10px;letter-spacing:3px;color:#a8c0d8;
+  }
+  .legend .dot{
+    width:8px;height:8px;border-radius:50%;display:inline-block;
+    box-shadow:0 0 10px currentColor;
+  }
+  .legend .chip:nth-child(1) .dot{background:#4f8fd6;color:#4f8fd6}
+  .legend .chip:nth-child(2) .dot{background:#ff7a3a;color:#ff7a3a}
+  .legend .chip:nth-child(3) .dot{background:#f0b441;color:#f0b441}
+  .legend .chip:nth-child(4) .dot{background:#3aa9d6;color:#3aa9d6}
+
+  /* Reset button */
+  .reset-btn{
+    margin-top:12px;width:100%;
+    padding:8px;font-size:10px;letter-spacing:4px;
+    background:transparent;color:#7a8fa8;
+    border:1px dashed rgba(122,143,168,.3);
+    cursor:pointer;transition: all .3s ease;
+  }
+  .reset-btn:hover{color:#f7d27a;border-color:rgba(247,210,122,.4)}
+
+  /* Empty history state */
+  .empty{
+    color:#5a6b85;font-size:11px;letter-spacing:4px;
+    text-align:center;padding:30px 0;line-height:2;
+  }
+
+  /* Mobile responsiveness fallback */
+  @media (max-width: 1100px){
+    main{grid-template-columns: 1fr;grid-template-rows:auto 1fr auto}
+    .panel{max-height:200px}
+    .stage{padding:16px 20px;height:auto;min-height:100vh}
+    html,body{overflow:auto}
+    .tagline .main{font-size:16px;letter-spacing:4px}
+  }
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg">
+  <div class="bg-base"></div>
+  <div class="horse ice"></div>
+  <div class="horse fire"></div>
+  <canvas id="particles"></canvas>
+  <div class="bg-vignette"></div>
+  <div class="bg-grain"></div>
+</div>
+
+<div class="stage">
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-mark"><span>CGE</span></div>
+      <div class="brand-text">
+        <div class="cn">远大健康 · 远大医药</div>
+        <div class="en">CGE HEALTHCARE · GRAND PHARMA</div>
+      </div>
+    </div>
+    <div class="tagline">
+      <div class="sub">标 准 化 · 可 复 制 · 可 转 训</div>
+      <div class="main">传薪火之光 · 燃增长之势</div>
+    </div>
+    <div class="meta">
+      <div class="pill">市场医学部</div>
+      <div>心血管急救事业群 · 终端销售部</div>
+      <div>薪 火 抽 签 系 统</div>
+    </div>
+  </header>
+
+  <!-- Main stage -->
+  <main>
+    <!-- Left: pool -->
+    <aside class="panel">
+      <div class="panel-title">
+        <span>终 端 销 售 部 · 名 册</span>
+        <span class="count" id="poolCount">03</span>
+      </div>
+      <ul class="pool" id="pool"></ul>
+      <button class="reset-btn" id="resetBtn">重 置 名 册</button>
+    </aside>
+
+    <!-- Center: draw stage -->
+    <section class="draw">
+      <div class="draw-frame">
+        <span class="corner tl"></span>
+        <span class="corner tr"></span>
+        <span class="corner bl"></span>
+        <span class="corner br"></span>
+        <div class="seal">·  薪  火  ·  抽  签  ·</div>
+        <div class="seal-bottom">CGE HEALTHCARE · MEDICAL MARKETING × SALES · 2026</div>
+        <div class="burst" id="burst"></div>
+
+        <div class="display">
+          <div class="label" id="label">准 备 就 绪</div>
+          <div class="name" id="nameDisplay">— · —</div>
+          <div class="sub-status" id="subStatus">点 击 「 开 始 抽 签 」 启 动 仪 式</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="count-select">
+          <span>抽签人数</span>
+          <select id="countSelect">
+            <option value="1">1 人</option>
+            <option value="2">2 人</option>
+            <option value="3">3 人</option>
+          </select>
+        </div>
+        <button class="btn primary" id="drawBtn">开 始 抽 签</button>
+      </div>
+    </section>
+
+    <!-- Right: history -->
+    <aside class="panel">
+      <div class="panel-title">
+        <span>中 签 · 记 录</span>
+        <span class="count" id="histCount">00</span>
+      </div>
+      <ul class="history" id="history">
+        <li class="empty" id="emptyHist">暂 无 记 录<br>等 待 薪 火 传 递</li>
+      </ul>
+      <div class="legend">
+        <span class="chip"><span class="dot"></span>学</span>
+        <span class="chip"><span class="dot"></span>练</span>
+        <span class="chip"><span class="dot"></span>考</span>
+        <span class="chip"><span class="dot"></span>赛</span>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    全 天 沉 浸<span class="dot">·</span>医 学 市 场 一 体 化<span class="dot">·</span>即 学 即 考 即 练<span class="dot">·</span>线 上 闭 环
+  </footer>
+</div>
+
+<script>
+/* ============================================================
+   参与名单（可在此修改）
+   ============================================================ */
+const INITIAL_NAMES = ["张三", "李四", "王五"];
+
+/* ============================================================
+   抽签状态
+   ============================================================ */
+let pool = [...INITIAL_NAMES];
+let drawn = [];
+let isSpinning = false;
+let spinTimer = null;
+let stopTimeout = null;
+
+const nameEl   = document.getElementById('nameDisplay');
+const labelEl  = document.getElementById('label');
+const subEl    = document.getElementById('subStatus');
+const drawBtn  = document.getElementById('drawBtn');
+const countSel = document.getElementById('countSelect');
+const poolEl   = document.getElementById('pool');
+const histEl   = document.getElementById('history');
+const poolCnt  = document.getElementById('poolCount');
+const histCnt  = document.getElementById('histCount');
+const resetBtn = document.getElementById('resetBtn');
+const burstEl  = document.getElementById('burst');
+
+function pad(n){ return n < 10 ? '0'+n : ''+n; }
+
+function renderPool(){
+  poolEl.innerHTML = '';
+  const all = [...INITIAL_NAMES];
+  all.forEach(n=>{
+    const li = document.createElement('li');
+    const isDrawn = drawn.includes(n);
+    if(isDrawn) li.className = 'drawn';
+    li.innerHTML = `<span>${n}</span>` + (isDrawn ? '' : '<span class="badge">在册</span>');
+    poolEl.appendChild(li);
+  });
+  poolCnt.textContent = pad(pool.length);
+}
+
+function renderHistory(){
+  histEl.innerHTML = '';
+  if(drawn.length === 0){
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.innerHTML = '暂 无 记 录<br>等 待 薪 火 传 递';
+    histEl.appendChild(li);
+  } else {
+    drawn.forEach((entry)=>{
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${entry.name}</span><time>${entry.time}</time>`;
+      histEl.appendChild(li);
+    });
+  }
+  histCnt.textContent = pad(drawn.length);
+}
+
+function nowTime(){
+  const d = new Date();
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/* Refresh ticker during spin */
+function tick(){
+  if(pool.length === 0) return;
+  const idx = Math.floor(Math.random()*pool.length);
+  nameEl.textContent = pool[idx];
+}
+
+async function drawOnce(){
+  return new Promise(resolve=>{
+    if(pool.length === 0){ resolve(null); return; }
+    isSpinning = true;
+    nameEl.classList.remove('revealed');
+    nameEl.classList.add('spinning');
+    labelEl.textContent = '薪 火 流 转 中';
+    subEl.textContent = '马 蹄 阵 阵 · 火 光 跃 动';
+    subEl.classList.remove('win');
+
+    // rapid then decelerating cycle
+    let interval = 50;
+    let elapsed = 0;
+    const totalSpin = 2200 + Math.random()*600;
+
+    function step(){
+      tick();
+      elapsed += interval;
+      if(elapsed >= totalSpin){
+        // settle
+        const winner = pool[Math.floor(Math.random()*pool.length)];
+        nameEl.textContent = winner;
+        nameEl.classList.remove('spinning');
+        nameEl.classList.add('revealed');
+        labelEl.textContent = '中 · 签';
+        subEl.textContent = `恭 喜 「 ${winner} 」 承 薪 火 之 光`;
+        subEl.classList.add('win');
+
+        // visual burst
+        burstEl.classList.remove('fire');
+        void burstEl.offsetWidth;
+        burstEl.classList.add('fire');
+        spawnEmbers();
+
+        // remove winner from pool, add to history
+        pool = pool.filter(n => n !== winner);
+        drawn.push({name: winner, time: nowTime()});
+        renderPool();
+        renderHistory();
+
+        isSpinning = false;
+        resolve(winner);
+        return;
+      }
+      // gradually slow down
+      if(elapsed > totalSpin*0.55) interval = 80;
+      if(elapsed > totalSpin*0.75) interval = 140;
+      if(elapsed > totalSpin*0.88) interval = 220;
+      spinTimer = setTimeout(step, interval);
+    }
+    step();
+  });
+}
+
+async function startDraw(){
+  if(isSpinning) return;
+  const n = parseInt(countSel.value, 10);
+
+  if(pool.length === 0){
+    subEl.textContent = '名 册 已 空 · 请 重 置 后 再 抽';
+    return;
+  }
+
+  drawBtn.disabled = true;
+  countSel.disabled = true;
+
+  const times = Math.min(n, pool.length);
+  for(let i=0; i<times; i++){
+    await drawOnce();
+    if(i < times-1) await new Promise(r => setTimeout(r, 1300));
+  }
+
+  drawBtn.disabled = false;
+  countSel.disabled = false;
+
+  if(pool.length === 0){
+    labelEl.textContent = '圆 满';
+    subEl.textContent = '薪 火 已 传 · 重 置 后 再 启';
+  }
+}
+
+drawBtn.addEventListener('click', startDraw);
+
+resetBtn.addEventListener('click', ()=>{
+  if(isSpinning) return;
+  pool = [...INITIAL_NAMES];
+  drawn = [];
+  renderPool();
+  renderHistory();
+  nameEl.textContent = '— · —';
+  nameEl.classList.remove('revealed','spinning');
+  labelEl.textContent = '准 备 就 绪';
+  subEl.textContent = '点 击 「 开 始 抽 签 」 启 动 仪 式';
+  subEl.classList.remove('win');
+});
+
+renderPool();
+renderHistory();
+
+/* ============================================================
+   背景粒子：火星 + 冰晶
+   ============================================================ */
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let W, H, embers = [], flakes = [];
+
+function resize(){
+  W = canvas.width  = window.innerWidth * devicePixelRatio;
+  H = canvas.height = window.innerHeight* devicePixelRatio;
+  canvas.style.width = window.innerWidth+'px';
+  canvas.style.height= window.innerHeight+'px';
+}
+window.addEventListener('resize', resize);
+resize();
+
+function makeEmber(){
+  return {
+    x: W*(0.55 + Math.random()*0.45),
+    y: H + Math.random()*40,
+    vy: -(0.4 + Math.random()*1.2) * devicePixelRatio,
+    vx: (Math.random()-0.5)*0.4 * devicePixelRatio,
+    size: (1 + Math.random()*2.2) * devicePixelRatio,
+    life: 0,
+    maxLife: 200 + Math.random()*200,
+    hue: 20 + Math.random()*25
+  };
+}
+function makeFlake(){
+  return {
+    x: W*Math.random()*0.55,
+    y: -10,
+    vy: (0.3 + Math.random()*0.8) * devicePixelRatio,
+    vx: (Math.random()-0.5)*0.3 * devicePixelRatio,
+    size: (1 + Math.random()*1.6) * devicePixelRatio,
+    alpha: 0.4 + Math.random()*0.5
+  };
+}
+
+for(let i=0;i<80;i++) embers.push(makeEmber());
+for(let i=0;i<40;i++) flakes.push(makeFlake());
+
+function spawnEmbers(){
+  for(let i=0;i<40;i++){
+    embers.push({
+      x: W*0.5 + (Math.random()-0.5)*W*0.3,
+      y: H*0.5 + (Math.random()-0.5)*H*0.2,
+      vy: -(1 + Math.random()*2) * devicePixelRatio,
+      vx: (Math.random()-0.5)*2 * devicePixelRatio,
+      size: (1.5 + Math.random()*2.5) * devicePixelRatio,
+      life: 0,
+      maxLife: 80 + Math.random()*80,
+      hue: 30 + Math.random()*20
+    });
+  }
+}
+
+function loop(){
+  ctx.clearRect(0,0,W,H);
+
+  // embers (fire side)
+  for(let i=embers.length-1; i>=0; i--){
+    const e = embers[i];
+    e.x += e.vx;
+    e.y += e.vy;
+    e.life++;
+    const lifeRatio = e.life/e.maxLife;
+    const alpha = (1 - lifeRatio) * 0.9;
+    if(e.life >= e.maxLife || e.y < -20){
+      embers.splice(i,1);
+      if(embers.length < 80) embers.push(makeEmber());
+      continue;
+    }
+    const g = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, e.size*4);
+    g.addColorStop(0, `hsla(${e.hue}, 100%, 65%, ${alpha})`);
+    g.addColorStop(0.4, `hsla(${e.hue-10}, 100%, 50%, ${alpha*0.5})`);
+    g.addColorStop(1, `hsla(${e.hue-15}, 100%, 40%, 0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.size*4, 0, Math.PI*2);
+    ctx.fill();
+    // core
+    ctx.fillStyle = `hsla(${e.hue+10}, 100%, 85%, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(e.x, e.y, e.size*0.6, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // flakes (ice side)
+  for(let i=flakes.length-1; i>=0; i--){
+    const f = flakes[i];
+    f.x += f.vx + Math.sin(f.y*0.01)*0.3;
+    f.y += f.vy;
+    if(f.y > H+10){
+      flakes.splice(i,1);
+      flakes.push(makeFlake());
+      continue;
+    }
+    const g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.size*3);
+    g.addColorStop(0, `rgba(200, 230, 255, ${f.alpha})`);
+    g.addColorStop(1, `rgba(120, 180, 240, 0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.size*3, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>
